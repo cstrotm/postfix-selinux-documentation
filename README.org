@@ -1,0 +1,52 @@
+#+Title: Postfix and SELinux
+#+Author: Carsten Strotmann
+#+Date: <2025-02-03 Mon>
+
+* SELinux Overview
+ * This document describes how to operate Postfix on RedHat compatible
+   systems (RHEL, Fedora, CentOS, Rocky-Linux, Alma-Linux etc) with
+   SELinux enabled
+** SELinux operation modes
+ * disabled / permissive / enforcing
+ * how to read the current state of SELinux
+ * How to switch
+** SELinux label on files and processes
+ * How SELinux enforces policy rules based on label
+** SELinux policies
+ * SELinux modules
+ * SELinux boolean switches
+** Audit Subsystem
+ * How does the Linux Audit subsystem works
+ * How to read SELinux audit logs
+ * How to use =ausearch=
+* SELinux Troubleshooting
+** How to isolate SELinux issues
+ * Is it really an SELinux issue?
+ * Which part of SELinux creates the issue?
+*** Finding the issue in the audit log
+ * Find and interpret AVC policy violations
+* Postfix and SELinux
+** The Postfix SELinux Policy-Module
+ * Controlling the Postfix policy module
+ * Process label in the Postfix module, and how they are used
+ * File system label in the Postfix module, and how they are used
+ * Network ports
+ * Postfix and other e-Mail related Boolean switches in the SELinux
+   policy
+** Changing label of files
+* Changing the SELinux policy
+** Changing file label path definitions
+** Changing network port assignments
+** Creating a new addition to the SELinux rule set
+ * Creating a new SELinux policy modules
+ * Using =audit2allow= to create a new policy module template
+ * Reviewing a new policy module
+ * Loading and testing a policy module
+* Common SELinux issues and recipes
+ * define a new daemon that Postfix master can run (e.g. postlogd)
+ * Writing to non standard log files
+ * Changing Postfix spool directories
+ * Changing Postfix network ports
+ * Virtual(8) to deliver mail as a given user to a specific subtree of
+   the file system.
+ * Access to various milter sockets
