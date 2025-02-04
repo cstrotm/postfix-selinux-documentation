@@ -144,7 +144,185 @@
 ** SELinux policies
  * SELinux modules
  * SELinux boolean switches
-** Audit Subsystem
+* Audit Subsystem
+** The Linux Audit Subsystem
+ * The Linux audit subsystem allows the operator of a Linux system to
+   specify fine-grained audit logging for system events.
+   - Events from Linux Security Modules (LSM) such as AppArmor or
+     SELinux
+   - Events from security-related applications (SSH, login program)
+   - Events which are triggered by any application and are stored in
+     the audit subsystem policy configuration (e.g. system calls, file
+     accesses, network activities).
+
+** SELinux and the Audit Subsystem
+ * The operation of SELinux without the audit subsystem is technically
+   possible, but often does not make sense.
+   - SELinux prevents accesses, but these are not logged, so that the
+     operator of the system has no overview of the of the
+     effectiveness of the SELinux-System
+   - A well-configured audit subsystem is the basis for the use of
+     SELinux
+
+** Audit Subsystem Overview
+
+ [[./images/Audit-overview_en.png]]
+
+* Linux Audit Subsystem Configuration
+** Configuration of the audit daemon
+ * The configuration file of the audit daemon under
+   =/etc/audit/auditd.conf= should therefore be updated using
+   resonable values before putting the audit subsystem (or SELinux)
+   into operation
+** Audit-Logfile
+ * In the standard configuration, the log data is written to the file
+   =/var/log/audit/audit.log=. For a central audit log server, it is
+   useful if this file is on a separate file system
+   #+BEGIN_EXAMPLE
+   write_logs = yes  # set to "no" for
+                     # only remote logging
+   log_file = /var/log/audit/audit.log
+   #+END_EXAMPLE
+** Group rights and format of the audit log file
+ * If the log information is to be read by users other than the
+   superuser =root=, the group membership of the log file should be
+   adjusted (e.g. to the group =wheel=).
+   #+BEGIN_EXAMPLE
+   log_group = root
+   log_format = ENRICHED   # "enriched" or "raw"
+   #+END_EXAMPLE
+ * With the log format =enriched=, the log data is provided with
+   metadata by the audit daemon, which simplifies the evaluation of
+   the log data. simplify. With the =raw= setting, the log data is
+   stored as sent by the Linux kernel
+** Log-Host Metadata
+ * The audit log daemon can add the host name of the source host to
+   the log information
+   - this is useful for remote audit logging
+   - =name= is the host name / domain that is added to the log data
+     when =name_format= is set to =user=.
+   #+BEGIN_EXAMPLE
+   name_format = NONE
+   ##name = mydomain
+   #+END_EXAMPLE
+
+ * Possible values for =name_format=:
+ | Value    | Description                                  |
+ |----------+----------------------------------------------|
+ | NONE     | No source-host metadata                      |
+ | HOSTNAME | The hostname of the system (gethostname)     |
+ | FQDN     | Full domain name from DNS reverse resolution |
+ | NUMERIC  | IP(v4) Address of the host                   |
+ | USER     | Value of the =name= parameter                |
+
+** "Space Left" event
+ * The =space_left= value specifies the limit of free space on the
+   storage medium of the log file above which the audit daemon should
+   issue a warning
+   - In the default setting, the warning is written to the =syslog=
+   - The value is in megabytes (MB) and is probably too low for modern
+     systems (recommendation: 1000 MB). The value can also be given as
+     a percentage (example: =25%=).
+   #+BEGIN_EXAMPLE
+   space_left = 75
+   space_left_action = SYSLOG
+   #+END_EXAMPLE
+** "Admin Space Left" event
+ * The =admin_space_left= value specifies the limit of free space on
+   the storage medium of the log file at which the audit daemon should
+   change its mode of operation. This value should be lower than
+   =space_left=.
+   - In the default setting, the audit daemon stops working
+   - The value is in megabytes (MB) and is probably too low for modern
+     systems (recommendation: 300 MB). The value can also be given in
+     percent (example: =5%=)
+   #+BEGIN_EXAMPLE
+   admin_space_left = 50
+   admin_space_left_action = SUSPEND
+   #+END_EXAMPLE
+** Storage-media error event
+ * These values specify how the audit daemon should react to errors
+   when writing the log file
+   - In the default setting, the audit daemon stops working
+   #+BEGIN_EXAMPLE
+   disk_full_action = SUSPEND
+   disk_error_action = SUSPEND
+   #+END_EXAMPLE
+** Event-actions for the audit deamon
+ | Keyword | Description                                               |
+ |---------+-----------------------------------------------------------|
+ | ignore  | Ignore state, no event                                    |
+ | syslog  | Log state via =syslog=                                    |
+ | rotate  | Rotate log-file, remove extra log-files                   |
+ | exec    | Execute a (shell-) script or program                      |
+ | suspend | Stop writing log data to files                            |
+ | single  | Switch system into /single user/ mode, deactivate network |
+ | halt    | Shutdown system                                           |
+
+
+** Audit-Daemon status
+ * The audit daemon is usually started by systemd very early in the
+   boot process
+ * It is managed as any other systemd service
+
+#+BEGIN_EXAMPLE
+# systemctl status auditd
+● auditd.service - Security Auditing Service
+     Loaded: loaded (/usr/lib/systemd/system/auditd.service; enabled; vendor preset: enabled)
+     Active: active (running) since Sun 2022-10-16 08:25:40 UTC; 12h ago
+       Docs: man:auditd(8)
+             https://github.com/linux-audit/audit-documentation
+   Main PID: 645 (auditd)
+      Tasks: 4 (limit: 2506)
+     Memory: 8.1M
+        CPU: 960ms
+     CGroup: /system.slice/auditd.service
+             ├─645 /sbin/auditd
+             └─647 /usr/sbin/sedispatch
+
+Oct 16 08:25:40 localhost augenrules[660]: enabled 1
+Oct 16 08:25:40 localhost augenrules[660]: failure 1
+Oct 16 08:25:40 localhost augenrules[660]: pid 645
+Oct 16 08:25:40 localhost augenrules[660]: rate_limit 0
+Oct 16 08:25:40 localhost augenrules[660]: backlog_limit 8192
+Oct 16 08:25:40 localhost augenrules[660]: lost 0
+Oct 16 08:25:40 localhost augenrules[660]: backlog 4
+Oct 16 08:25:40 localhost augenrules[660]: backlog_wait_time 60000
+Oct 16 08:25:40 localhost augenrules[660]: backlog_wait_time_actual 0
+Oct 16 08:25:40 localhost systemd[1]: Started Security Auditing Service.
+#+END_EXAMPLE
+
+** Queries with "ausearch"
+ * The tool =ausearch= can be used to query the local audit log
+** Example query with "ausearch"
+ * Display all audit entries for the topic /sudo/
+   #+BEGIN_EXAMPLE
+   ausearch -i -x sudo
+   #+END_EXAMPLE
+ * Report on failed login attempts
+   #+BEGIN_EXAMPLE
+   ausearch -m USER_AUTH,USER_ACCT --success no
+   #+END_EXAMPLE
+ * All audit messages for user with UID 1000
+   #+BEGIN_EXAMPLE
+   ausearch -ua 1000 -i
+   #+END_EXAMPLE
+ * All failed syscalls since yesterday
+   #+BEGIN_EXAMPLE
+   ausearch --start yesterday --end now -m SYSCALL -sv no -i
+   #+END_EXAMPLE
+
+** CSV Output Format
+  * =ausearch= can save the query results into a CSV-file (comma
+    separated value file)
+  * CSV files can be loaded into office programs or imported into
+    databases for further investigation
+
+  #+BEGIN_EXAMPLE
+  # ausearch --start today --format csv 2>/dev/null > audit-today.csv
+  #+END_EXAMPLE
+
+** TODO Audit Subsystem
  * How does the Linux Audit subsystem works
  * How to read SELinux audit logs
  * How to use =ausearch=
