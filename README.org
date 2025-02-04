@@ -5,11 +5,140 @@
 * SELinux Overview
  * This document describes how to operate Postfix on RedHat compatible
    systems (RHEL, Fedora, CentOS, Rocky-Linux, Alma-Linux etc) with
-   SELinux enabled
-** SELinux operation modes
+   SELinux enabled.
+** SELinux
+ * SELinux (Security-Enhanced Linux) is an extension of the Linux
+   kernel. It implements access controls to resources in the sense of
+   Mandatory Access Control. SELinux was developed by the NSA for its
+   own needs and is maintained by the Linux distributor Red Hat.
+ * SELinux is open source software and consists of a kernel module,
+   auxiliary programs and numerous extensions for system programs.
+** Advantages of SELinux
+ * SELinux allows a fine-grained policy to be defined for processes
+ * Processes are not able to access files or manipulate other
+   processes outside of SELinux rules
+ * The SELinux system can prevent the escalation of privileges through
+   security vulnerabilities in software
+** SELinux Policies
+ * The core component of SELinux are the policies, which describe in
+   great detail what accesses (file system, syscalls, network) a
+   process or user is allowed.
+** SELinux Enforcement Modes
+ * SELinux can be operated in three different modes
+   - *Enforcing*: Policies are loaded and actively enforced
+   - *Permissive*: Policies are loaded but not enforced. Policy
+     violations are logged in the audit log
+   - *Disabled*: Policies are not loaded, SELinux is not active.
+** SELinux Configuration
+ * The SELinux enforcement-modes and policy-modes-Modi are configured
+   in the file =/etc/selinux/config=
+   #+BEGIN_EXAMPLE
+   SELINUX=enforcing
+   SELINUXTYPE=targeted
+   #+END_EXAMPLE
+** SELinux Status
+  * The command =sestatus= will print the current state of the SELinux
+    system
+  #+BEGIN_EXAMPLE
+  # sestatus
+  SELinux status:                 enabled
+  SELinuxfs mount:                /sys/fs/selinux
+  SELinux root directory:         /etc/selinux
+  Loaded policy name:             targeted
+  Current mode:                   permissive
+  Mode from config file:          enforcing
+  Policy MLS status:              enabled
+  Policy deny_unknown status:     allowed
+  Memory protection checking:     actual (secure)
+  Max kernel policy version:      33
+  #+END_EXAMPLE
+** TODO SELinux operation modes
  * disabled / permissive / enforcing
  * how to read the current state of SELinux
  * How to switch
+
+
+** DAC and MAC
+ * Classic Unix/Linux systems implement Discretionary Access Control
+   (DAC)
+   - access rights are determined by file attributes and can be freely
+     chosen by the user
+ * SELinux implements Mandatory Access Control (MAC), where access
+   rights are defined *in addition* to DAC in a system-wide security
+   policy.
+ * A MAC can usually *not* be changed by the user or processes
+** SELinux policy
+ * The SELinux policy describes in great detail the access rights of
+   users and processes to files and system functions (system calls)
+ * In source code, the SELinux policy is modular - The source code is
+   compiled into a monolithic binary code when the policy is loaded
+   into the Linux kernel
+** SELinux Label
+ * SELinux policy rules are assigned to /objects/ (processes, files
+   and user) by SELinux label
+ * Each file in the filesystem, each user and each process does have a
+   SELinux label
+ * The label selects the rules from the SELinux ruleset
+** Label on files
+ * Example output of =ls -lZ /etc=
+
+ [[./images/SELinux-file-label_en.png]]
+
+** Adjust SELinux file label
+ * SELinux file-label are stored in extended attributes inside the file-system
+   - SELinux requires a filesystem with extended attribute support
+ * SELinux file-label can be changed with =chcon= (Change
+   Context):
+
+   TODO - change to be Postfix specific
+   #+BEGIN_EXAMPLE
+   # chcon --type httpd_sys_content_t /var/www/html/index.html
+   #+END_EXAMPLE
+
+** Adjust SELinux file label
+ * Alternatively the correct file label can be determined from the
+   SELinux policy and assigned to the file
+   #+BEGIN_EXAMPLE
+   # restorecon -v /var/www/html/index.html
+   #+END_EXAMPLE
+** Adjust SELinux file label
+ * If a SELinux system was operated with SELinux switched off, the
+   SELinux file system labels may no longer be correct
+   - Files created with SELinux switched off do not receive a label
+   - The labels must be set correctly before activating SELinux
+ * If the file =/.autorelabel= exists in the root directory =/= then
+   all files will be given new SELinux labels and then the system will
+   be rebooted
+   #+BEGIN_EXAMPLE
+   # touch /.autorelabel && reboot
+   #+END_EXAMPLE
+ * The autorelabel process starts the script =/usr/sbin/fixfiles=
+ * This script can also be used to find missing or wrong SELinux
+   labels on files.
+   #+begin_example
+   # fixfiles -v check /etc
+   Would relabel /etc/ssh/keys/ssh_host_ecdsa_key from system_u:object_r:sshd_key_t:s0 to system_u:object_r:etc_t:s0
+   Would relabel /etc/ssh/keys/ssh_host_ecdsa_key.pub from system_u:object_r:sshd_key_t:s0 to system_u:object_r:etc_t:s0
+   Would relabel /etc/ssh/keys/ssh_host_ed25519_key from system_u:object_r:sshd_key_t:s0 to system_u:object_r:etc_t:s0
+   Would relabel /etc/ssh/keys/ssh_host_ed25519_key.pub from system_u:object_r:sshd_key_t:s0 to system_u:object_r:etc_t:s0
+   Would relabel /etc/ssh/keys/ssh_host_rsa_key from system_u:object_r:sshd_key_t:s0 to system_u:object_r:etc_t:s0
+   Would relabel /etc/ssh/keys/ssh_host_rsa_key.pub from system_u:object_r:sshd_key_t:s0 to system_u:object_r:etc_t:s0
+   Would relabel /etc/hosts~ from unconfined_u:object_r:etc_t:s0 to unconfined_u:object_r:net_conf_t:s0
+   #+end_example
+
+ * The script =fixfiles= can read the SELinux label information from
+   RPM-Packet-Metadata and can fix the SELinux label of files that belong
+   to an RPM-Packet.
+   #+begin_example
+   fixfiles -v -R nginx,httpd restore
+   #+end_example
+** Label on processes
+ * Example output from the command =ps -efZ=
+
+ [[./images/SELinux-process-label_en.png]]
+
+ * Running processes are labeled based on the loaded SELinux policy
+
 ** SELinux label on files and processes
  * How SELinux enforces policy rules based on label
 ** SELinux policies
