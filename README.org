@@ -165,7 +165,9 @@ drwxr-xr-x. 2 root root system_u:object_r:postfix_etc_t:s0        6 Nov  5 10:18
 ** Label on processes
  * Example output from the command =ps -efZ=
 
- [[./images/SELinux-process-label_en.png]] processes are labeled based on the loaded SELinux policy
+ [[./images/SELinux-process-label_en.png]]
+
+ * Processes are labeled based on the loaded SELinux policy
 
 ** TODO SELinux label on files and processes
  * How SELinux enforces policy rules based on label
