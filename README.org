@@ -155,7 +155,12 @@ drwxr-xr-x. 2 root root system_u:object_r:postfix_etc_t:s0        6 Nov  5 10:18
    # fixfiles -v check /etc/postfix
    Would relabel /etc/postfix/recipients from unconfined_u:object_r:admin_home_t:s0 to unconfined_u:object_r:postfix_etc_t:s0
    #+end_example
-
+ * The =restore= subcommand will change the label on the wrongly
+   labled file(s):
+   #+begin_example
+   [root@selinux-postfix ~]# fixfiles -v restore /etc/postfix
+   Relabeled /etc/postfix/recipients from unconfined_u:object_r:admin_home_t:s0 to unconfined_u:object_r:postfix_etc_t:s0
+   #+end_example
  * The script =fixfiles= can read the SELinux label information from
    RPM-Packet-Metadata and can fix the SELinux label of files that belong
    to an RPM-Packet.
