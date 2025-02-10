@@ -80,7 +80,7 @@
    SELinux label
  * The label selects the rules from the SELinux ruleset
 ** Label on files
- * Example output of =ls -lZ /etc=
+ * Example output of =ls -lZ /etc/postfix/main.cf=
 
  [[./images/SELinux-file-label_en.png]]
 
