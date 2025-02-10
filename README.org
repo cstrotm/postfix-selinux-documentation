@@ -357,10 +357,7 @@ Oct 16 08:25:40 localhost systemd[1]: Started Security Auditing Service.
   # ausearch --start today --format csv 2>/dev/null > audit-today.csv
   #+END_EXAMPLE
 
-** TODO Audit Subsystem
- * How does the Linux Audit subsystem works
- * How to read SELinux audit logs
- * How to use =ausearch=
+
 * TODO SELinux Troubleshooting
 ** TODO How to isolate SELinux issues
  * Is it really an SELinux issue?
