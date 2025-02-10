@@ -196,7 +196,7 @@ drwxr-xr-x. 2 root root system_u:object_r:postfix_etc_t:s0        6 Nov  5 10:18
 
 ** Audit Subsystem Overview
 
- [[./images/Audit-overview_en.png]]
+ [[./images/Audit-overview.png]]
 
 * Linux Audit Subsystem Configuration
 ** Configuration of the audit daemon
