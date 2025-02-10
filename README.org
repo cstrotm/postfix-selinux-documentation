@@ -76,9 +76,18 @@
 ** SELinux Label
  * SELinux policy rules are assigned to /objects/ (processes, files
    and user) by SELinux label
+   - The SELinux policy identifies processes and files by their label.
+     The SELinux policy does not enforce rules on names of files or
+     processes, nor on the location of files. Important are the file
+     label.
  * Each file in the filesystem, each user and each process does have a
    SELinux label
  * The label selects the rules from the SELinux ruleset
+ * The SELinux label are stored in extended attributes of files. In
+   order to be able to use SELinux, the underlying filesystem *must*
+   support extended attributes. =xfs=, =ext4=, =btrfs= etc are file,
+   =fat=, =ntfs=, older NFS (without extended attributes) and other
+   /foreign/ filesystems will not work!
 ** Label on files
  * Example output of =ls -lZ /etc/postfix/main.cf=
 
@@ -90,16 +99,15 @@
  * SELinux file-label can be changed with =chcon= (Change
    Context):
 
-   TODO - change to be Postfix specific
    #+BEGIN_EXAMPLE
-   # chcon --type httpd_sys_content_t /var/www/html/index.html
+   # chcon --type postfix_etc_t /etc/postfix/virtual.db
    #+END_EXAMPLE
 
 ** Adjust SELinux file label
  * Alternatively the correct file label can be determined from the
    SELinux policy and assigned to the file
    #+BEGIN_EXAMPLE
-   # restorecon -v /var/www/html/index.html
+   # restorecon -v /etc/postfix/transport
    #+END_EXAMPLE
 ** Adjust SELinux file label
  * If a SELinux system was operated with SELinux switched off, the
@@ -115,31 +123,51 @@
  * The autorelabel process starts the script =/usr/sbin/fixfiles=
  * This script can also be used to find missing or wrong SELinux
    labels on files.
+ * This Postfix configuration directory has an SELinux label issue on
+   the file =recipients=:
+#+begin_example
+[root@selinux-postfix ~]# ls -lZtr /etc/postfix/
+total 224
+-rw-r--r--. 1 root root system_u:object_r:postfix_etc_t:s0     6929 Feb 14  2016 relocated
+-rw-r--r--. 1 root root system_u:object_r:postfix_etc_t:s0    10221 Sep 17  2016 generic
+-rw-r--r--. 1 root root system_u:object_r:postfix_etc_t:s0    23802 Oct  9  2016 header_checks
+-rw-r--r--. 1 root root system_u:object_r:postfix_etc_t:s0    13963 Jun  3  2018 virtual
+-rw-r--r--. 1 root root system_u:object_r:postfix_etc_t:s0    13194 Jun  3  2018 canonical
+-rw-r--r--. 1 root root system_u:object_r:postfix_etc_t:s0    21111 Sep  8  2019 access
+-rw-r--r--. 1 root root system_u:object_r:postfix_etc_t:s0    13436 Jan 11  2020 transport
+-rw-r--r--. 1 root root system_u:object_r:postfix_etc_t:s0     6372 Nov  5 10:17 master.cf.proto
+-rw-r--r--. 1 root root system_u:object_r:postfix_etc_t:s0     6372 Nov  5 10:17 master.cf
+-rw-r--r--. 1 root root system_u:object_r:postfix_etc_t:s0    29130 Nov  5 10:17 main.cf.proto
+drwxr-xr-x. 2 root root system_u:object_r:postfix_etc_t:s0        6 Nov  5 10:18 postfix-files.d
+-rw-r--r--. 1 root root system_u:object_r:postfix_etc_t:s0    20163 Nov  5 10:18 postfix-files
+-rw-r--r--. 1 root root system_u:object_r:postfix_etc_t:s0    29369 Nov  5 10:18 main.cf
+drwxr-xr-x. 2 root root system_u:object_r:postfix_etc_t:s0        6 Nov  5 10:18 dynamicmaps.cf.d
+-rw-r--r--. 1 root root system_u:object_r:postfix_etc_t:s0       60 Nov  5 10:18 dynamicmaps.cf
+-rw-r--r--. 1 root root unconfined_u:object_r:admin_home_t:s0    22 Feb 10 12:52 recipients
+#+end_example
+ * The =fixfiles= command would fix the SELinux /type/ of the file
+   =recipients= from =admin_home_t= to =postfix_etc_t=, as the Postfix
+   processes are not allowed to access files of type =admin_home_t=.
+   It will not change the SELinux User or Role. Changing the SELinux
+   User or Role is not required in the standard =targeted= SELinux
+   policy found in Red Hat compatible Linux systems.
    #+begin_example
-   # fixfiles -v check /etc
-   Would relabel /etc/ssh/keys/ssh_host_ecdsa_key from system_u:object_r:sshd_key_t:s0 to system_u:object_r:etc_t:s0
-   Would relabel /etc/ssh/keys/ssh_host_ecdsa_key.pub from system_u:object_r:sshd_key_t:s0 to system_u:object_r:etc_t:s0
-   Would relabel /etc/ssh/keys/ssh_host_ed25519_key from system_u:object_r:sshd_key_t:s0 to system_u:object_r:etc_t:s0
-   Would relabel /etc/ssh/keys/ssh_host_ed25519_key.pub from system_u:object_r:sshd_key_t:s0 to system_u:object_r:etc_t:s0
-   Would relabel /etc/ssh/keys/ssh_host_rsa_key from system_u:object_r:sshd_key_t:s0 to system_u:object_r:etc_t:s0
-   Would relabel /etc/ssh/keys/ssh_host_rsa_key.pub from system_u:object_r:sshd_key_t:s0 to system_u:object_r:etc_t:s0
-   Would relabel /etc/hosts~ from unconfined_u:object_r:etc_t:s0 to unconfined_u:object_r:net_conf_t:s0
+   # fixfiles -v check /etc/postfix
+   Would relabel /etc/postfix/recipients from unconfined_u:object_r:admin_home_t:s0 to unconfined_u:object_r:postfix_etc_t:s0
    #+end_example
 
  * The script =fixfiles= can read the SELinux label information from
    RPM-Packet-Metadata and can fix the SELinux label of files that belong
    to an RPM-Packet.
    #+begin_example
-   fixfiles -v -R nginx,httpd restore
+   fixfiles -v -R postfix restore
    #+end_example
 ** Label on processes
  * Example output from the command =ps -efZ=
 
- [[./images/SELinux-process-label_en.png]]
+ [[./images/SELinux-process-label_en.png]] processes are labeled based on the loaded SELinux policy
 
- * Running processes are labeled based on the loaded SELinux policy
-
-** SELinux label on files and processes
+** TODO SELinux label on files and processes
  * How SELinux enforces policy rules based on label
 ** SELinux policies
  * SELinux modules
