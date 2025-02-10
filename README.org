@@ -176,7 +176,7 @@ drwxr-xr-x. 2 root root system_u:object_r:postfix_etc_t:s0        6 Nov  5 10:18
 
 ** TODO SELinux label on files and processes
  * How SELinux enforces policy rules based on label
-** SELinux policies
+** TODO SELinux policies
  * SELinux modules
  * SELinux boolean switches
 * Audit Subsystem
@@ -361,30 +361,30 @@ Oct 16 08:25:40 localhost systemd[1]: Started Security Auditing Service.
  * How does the Linux Audit subsystem works
  * How to read SELinux audit logs
  * How to use =ausearch=
-* SELinux Troubleshooting
-** How to isolate SELinux issues
+* TODO SELinux Troubleshooting
+** TODO How to isolate SELinux issues
  * Is it really an SELinux issue?
  * Which part of SELinux creates the issue?
-*** Finding the issue in the audit log
+*** TODO Finding the issue in the audit log
  * Find and interpret AVC policy violations
-* Postfix and SELinux
-** The Postfix SELinux Policy-Module
+* TODO Postfix and SELinux
+** TODO The Postfix SELinux Policy-Module
  * Controlling the Postfix policy module
  * Process label in the Postfix module, and how they are used
  * File system label in the Postfix module, and how they are used
  * Network ports
  * Postfix and other e-Mail related Boolean switches in the SELinux
    policy
-** Changing label of files
-* Changing the SELinux policy
-** Changing file label path definitions
-** Changing network port assignments
-** Creating a new addition to the SELinux rule set
+** TODO Changing label of files
+* TODO Changing the SELinux policy
+** TODO Changing file label path definitions
+** TODO Changing network port assignments
+** TODO Creating a new addition to the SELinux rule set
  * Creating a new SELinux policy modules
  * Using =audit2allow= to create a new policy module template
  * Reviewing a new policy module
  * Loading and testing a policy module
-* Common SELinux issues and recipes
+* TODO Common SELinux issues and recipes
  * define a new daemon that Postfix master can run (e.g. postlogd)
  * Writing to non standard log files
  * Changing Postfix spool directories
